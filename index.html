@@ -3,302 +3,420 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>多轨音频播放器（全局控制）</title>
+    <title>简易多轨道时间线编辑器（类似AE）</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Arial', sans-serif;
+            font-family: 'Segoe UI', Roboto, sans-serif;
         }
         body {
-            background-color: #f0f2f5;
-            color: #333;
-            padding: 30px;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .master-controls {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .global-play-btn {
-            background-color: #2ecc71;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-bottom: 15px;
-            transition: background 0.3s;
-        }
-        .global-play-btn:hover {
-            background-color: #27ae60;
-        }
-        .global-play-btn.paused {
-            background-color: #e67e22;
-        }
-        .global-play-btn.paused:hover {
-            background-color: #d35400;
-        }
-        .progress-section {
-            margin-bottom: 10px;
-        }
-        .time-display {
-            font-size: 14px;
-            color: #7f8c8d;
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-        }
-        .progress-container {
-            width: 100%;
-            height: 8px;
-            background-color: #eee;
-            border-radius: 4px;
-            cursor: pointer;
-            position: relative;
-        }
-        .progress-bar {
-            height: 100%;
-            background-color: #3498db;
-            border-radius: 4px;
-            width: 0%;
-            transition: width 0.1s linear;
-        }
-        .tracks-container {
+            background-color: #1a1a1a;
+            color: #f0f0f0;
+            overflow: hidden;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            gap: 10px;
         }
-        .track {
-            background: white;
-            border-radius: 8px;
-            padding: 15px;
+
+        /* 顶部控制栏 */
+        .top-controls {
+            background-color: #2d2d2d;
+            padding: 12px 20px;
             display: flex;
-            justify-content: space-between;
+            gap: 15px;
             align-items: center;
-            box-shadow: 0 1px 5px rgba(0,0,0,0.05);
+            border-bottom: 1px solid #444;
         }
-        .track-name {
-            font-size: 16px;
-            color: #2c3e50;
+        .project-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: #fff;
         }
-        .track-buttons {
+        .control-btn {
+            background-color: #3d3d3d;
+            border: none;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
             display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s;
+        }
+        .control-btn:hover {
+            background-color: #4a4a4a;
+        }
+        .play-btn {
+            background-color: #0078d7;
+        }
+        .play-btn:hover {
+            background-color: #005a9e;
+        }
+        .timecode {
+            margin-left: auto;
+            font-family: monospace;
+            color: #a0a0a0;
+        }
+
+        /* 轨道区域 */
+        .timeline-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* 轨道名称列 */
+        .track-names {
+            width: 200px;
+            background-color: #252525;
+            border-right: 1px solid #444;
+            overflow-y: auto;
+        }
+        .track-name-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
             gap: 10px;
         }
-        .btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
+        .track-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        .audio-icon {
+            background-color: #008000;
+        }
+        .video-icon {
+            background-color: #ff0000;
+        }
+
+        /* 时间线轨道列 */
+        .tracks-timeline {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 时间标尺 */
+        .time-ruler {
+            height: 30px;
+            background-color: #252525;
+            border-bottom: 1px solid #444;
+            position: relative;
+            padding-left: 50px;
+            overflow: hidden;
+        }
+        .ruler-marks {
+            display: flex;
+            height: 100%;
+            align-items: flex-end;
+        }
+        .ruler-mark {
+            width: 50px;
+            border-left: 1px solid #555;
+            height: 10px;
+            position: relative;
+        }
+        .ruler-mark::after {
+            content: attr(data-time);
+            position: absolute;
+            bottom: -20px;
+            left: -15px;
+            font-size: 12px;
+            color: #aaa;
+            font-family: monospace;
+        }
+
+        /* 轨道内容区域 */
+        .tracks-content {
+            flex: 1;
+            overflow: auto;
+            position: relative;
+            background-color: #1a1a1a;
+            background-image: 
+                linear-gradient(to right, #2d2d2d 1px, transparent 1px),
+                linear-gradient(to bottom, #2d2d2d 1px, transparent 1px);
+            background-size: 50px 60px; /* 网格大小：时间刻度×轨道高度 */
+            padding-left: 50px;
+        }
+
+        /* 播放头（时间指示器） */
+        .playhead {
+            position: absolute;
+            top: 0;
+            left: 50px; /* 与时间标尺对齐 */
+            width: 2px;
+            height: 100%;
+            background-color: #ff0000;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .playhead::after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: -4px;
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid #ff0000;
+        }
+
+        /* 轨道内容块（类似AE的素材片段） */
+        .track-item {
+            position: absolute;
+            height: 50px;
+            background-color: rgba(0, 120, 215, 0.7);
+            border-radius: 3px;
+            top: 5px; /* 轨道内边距 */
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            cursor: move;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            font-size: 14px;
+        }
+        .track-1 { top: 5px; }    /* 轨道1位置 */
+        .track-2 { top: 65px; }   /* 轨道2位置（轨道高度60px） */
+        .track-3 { top: 125px; }  /* 轨道3位置 */
+
+        /* 底部缩放控制 */
+        .zoom-controls {
+            height: 30px;
+            background-color: #252525;
+            border-top: 1px solid #444;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 10px;
+        }
+        .zoom-btn {
+            background: none;
             border: none;
+            color: #aaa;
             cursor: pointer;
-            font-weight: bold;
-            transition: all 0.2s;
+            font-size: 16px;
         }
-        .btn-s {
-            background-color: #3498db;
-            color: white;
+        .zoom-btn:hover {
+            color: #fff;
         }
-        .btn-s:hover, .btn-s.active {
-            background-color: #2980b9;
-            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+        .zoom-slider {
+            flex: 1;
+            height: 4px;
+            background-color: #444;
+            border-radius: 2px;
+            position: relative;
         }
-        .btn-m {
-            background-color: #ecf0f1;
-            color: #7f8c8d;
-        }
-        .btn-m:hover, .btn-m.muted {
-            background-color: #e74c3c;
-            color: white;
-        }
-        audio {
-            display: none;
+        .zoom-thumb {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: #0078d7;
+            border-radius: 50%;
+            top: 50%;
+            transform: translateY(-50%);
+            left: 30%; /* 初始缩放比例 */
         }
     </style>
 </head>
 <body>
-    <h1>🎵 多轨音频播放器</h1>
-
-    <!-- 总控制区（全局播放/暂停 + 共享进度条） -->
-    <div class="master-controls">
-        <button class="global-play-btn" id="globalPlayBtn" onclick="toggleAllPlay()">
-            ▶️ 全部播放
+    <!-- 顶部控制栏 -->
+    <div class="top-controls">
+        <div class="project-title">我的项目 - 多轨道编辑</div>
+        <button class="control-btn play-btn" id="playPauseBtn">
+            <span>▶</span> 播放/暂停
         </button>
-        <div class="progress-section">
-            <div class="time-display">
-                <span id="currentTime">00:00</span>
-                <span id="totalTime">00:00</span>
+        <button class="control-btn">
+            <span>↺</span> 重置
+        </button>
+        <div class="timecode" id="timecode">00:00:00.00</div>
+    </div>
+
+    <!-- 时间线主体 -->
+    <div class="timeline-container">
+        <!-- 轨道名称列 -->
+        <div class="track-names">
+            <div class="track-name-item">
+                <div class="track-icon audio-icon">A</div>
+                <div>音频轨道 1</div>
             </div>
-            <div class="progress-container" id="progressContainer">
-                <div class="progress-bar" id="progressBar"></div>
+            <div class="track-name-item">
+                <div class="track-icon audio-icon">A</div>
+                <div>音频轨道 2</div>
+            </div>
+            <div class="track-name-item">
+                <div class="track-icon video-icon">V</div>
+                <div>视频轨道 1</div>
+            </div>
+        </div>
+
+        <!-- 时间线轨道列 -->
+        <div class="tracks-timeline">
+            <!-- 时间标尺 -->
+            <div class="time-ruler">
+                <div class="ruler-marks" id="rulerMarks">
+                    <!-- 动态生成刻度 -->
+                </div>
+            </div>
+
+            <!-- 轨道内容区域 -->
+            <div class="tracks-content" id="tracksContent">
+                <!-- 播放头 -->
+                <div class="playhead" id="playhead"></div>
+
+                <!-- 轨道1内容 -->
+                <div class="track-item track-1" style="width: 200px; left: 50px;">
+                    背景音乐.mp3
+                </div>
+
+                <!-- 轨道2内容 -->
+                <div class="track-item track-2" style="width: 150px; left: 150px;">
+                    人声.wav
+                </div>
+
+                <!-- 轨道3内容 -->
+                <div class="track-item track-3" style="width: 300px; left: 50px;">
+                    主画面.mp4
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- 轨道列表 -->
-    <div class="tracks-container">
-        <!-- 轨道1 -->
-        <div class="track">
-            <div class="track-name">轨道 1 - 主旋律</div>
-            <div class="track-buttons">
-                <button class="btn btn-s" onclick="playOnly('track1')">S</button>
-                <button class="btn btn-m" onclick="toggleMute('track1')">M</button>
-            </div>
-            <audio id="track1" src="music/track1.mp3" type="audio/mpeg"></audio>
+    <!-- 底部缩放控制 -->
+    <div class="zoom-controls">
+        <button class="zoom-btn" id="zoomOut">-</button>
+        <div class="zoom-slider">
+            <div class="zoom-thumb" id="zoomThumb"></div>
         </div>
-
-        <!-- 轨道2 -->
-        <div class="track">
-            <div class="track-name">轨道 2 - 鼓点</div>
-            <div class="track-buttons">
-                <button class="btn btn-s" onclick="playOnly('track2')">S</button>
-                <button class="btn btn-m" onclick="toggleMute('track2')">M</button>
-            </div>
-            <audio id="track2" src="music/track2.mp3" type="audio/mpeg">
-
-        <!-- 轨道3 -->
-        <div class="track">
-            <div class="track-name">轨道 3 - 贝斯</div>
-            <div class="track-buttons">
-                <button class="btn btn-s" onclick="playOnly('track3')">S</button>
-                <button class="btn btn-m" onclick="toggleMute('track3')">M</button>
-            </div>
-            <audio id="track3" src="music/track3.mp3" type="audio/mpeg"></audio>
-        </div>
+        <button class="zoom-btn" id="zoomIn">+</button>
     </div>
 
     <script>
-        // 获取所有轨道元素和控制组件
-        const tracks = {
-            track1: document.getElementById('track1'),
-            track2: document.getElementById('track2'),
-            track3: document.getElementById('track3')
-        };
-        const trackIds = Object.keys(tracks);
-        const globalPlayBtn = document.getElementById('globalPlayBtn');
-        const progressBar = document.getElementById('progressBar');
-        const progressContainer = document.getElementById('progressContainer');
-        const currentTimeEl = document.getElementById('currentTime');
-        const totalTimeEl = document.getElementById('totalTime');
-        let isAllPlaying = false; // 全局播放状态
+        // 核心变量
+        const playhead = document.getElementById('playhead');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const timecodeEl = document.getElementById('timecode');
+        const rulerMarks = document.getElementById('rulerMarks');
+        const tracksContent = document.getElementById('tracksContent');
+        const zoomThumb = document.getElementById('zoomThumb');
+        
+        let isPlaying = false;
+        let currentTime = 0; // 当前时间（秒）
+        let duration = 30; // 总时长（秒）
+        let frameRate = 30; // 帧率（用于时间显示）
+        let zoomLevel = 30; // 缩放比例（百分比）
+        let animationFrameId = null;
 
-        // 初始化：所有轨道同步进度
-        trackIds.forEach(id => {
-            const track = tracks[id];
-            track.addEventListener('timeupdate', syncProgress);
-            track.addEventListener('loadedmetadata', updateTotalTime);
-        });
-
-        // 全局播放/暂停（默认全部一起播放）
-        function toggleAllPlay() {
-            if (isAllPlaying) {
-                // 全部暂停
-                trackIds.forEach(id => tracks[id].pause());
-                globalPlayBtn.innerHTML = '▶️ 全部播放';
-                globalPlayBtn.classList.remove('paused');
-            } else {
-                // 全部播放（首次播放需用户交互，捕获错误）
-                trackIds.forEach(id => {
-                    tracks[id].play().catch(err => {
-                        alert('请先点击页面任意位置再播放（浏览器限制）');
-                    });
-                });
-                globalPlayBtn.innerHTML = '⏸️ 全部暂停';
-                globalPlayBtn.classList.add('paused');
-            }
-            isAllPlaying = !isAllPlaying;
-            // 重置单独播放状态样式
-            document.querySelectorAll('.btn-s').forEach(btn => btn.classList.remove('active'));
-        }
-
-        // 单独播放某一轨（暂停其他所有轨道）
-        function playOnly(trackId) {
-            // 暂停其他轨道，播放目标轨道
-            trackIds.forEach(id => {
-                if (id === trackId) {
-                    tracks[id].play().catch(err => {
-                        alert('请先点击页面任意位置再播放（浏览器限制）');
-                    });
-                } else {
-                    tracks[id].pause();
-                }
-            });
-            // 更新按钮样式和状态
-            document.querySelectorAll('.btn-s').forEach(btn => {
-                btn.classList.toggle('active', btn.getAttribute('onclick').includes(trackId));
-            });
-            globalPlayBtn.innerHTML = '▶️ 全部播放';
-            globalPlayBtn.classList.remove('paused');
-            isAllPlaying = false;
-        }
-
-        // 静音/取消静音某一轨
-        function toggleMute(trackId) {
-            const track = tracks[trackId];
-            const muteBtn = document.querySelector(`[onclick="toggleMute('${trackId}')"]`);
-            track.muted = !track.muted;
-            muteBtn.classList.toggle('muted', track.muted);
-        }
-
-        // 同步所有轨道进度条
-        function syncProgress() {
-            // 以第一个播放中的轨道为基准同步进度
-            const playingTrack = trackIds
-                .map(id => tracks[id])
-                .find(track => !track.paused);
-            
-            if (!playingTrack) return;
-
-            const progress = (playingTrack.currentTime / playingTrack.duration) * 100;
-            progressBar.style.width = `${progress}%`;
-            currentTimeEl.textContent = formatTime(playingTrack.currentTime);
-            
-            // 同步所有轨道的当前时间（确保进度一致）
-            trackIds.forEach(id => {
-                const track = tracks[id];
-                if (track !== playingTrack && !track.paused) {
-                    track.currentTime = playingTrack.currentTime;
-                }
-            });
-        }
-
-        // 点击进度条跳转位置（所有轨道同步）
-        progressContainer.addEventListener('click', (e) => {
-            const clickRatio = e.offsetX / progressContainer.offsetWidth;
-            trackIds.forEach(id => {
-                const track = tracks[id];
-                if (track.duration) {
-                    track.currentTime = track.duration * clickRatio;
-                }
-            });
-        });
-
-        // 更新总时长（取第一个加载完成的轨道时长）
-        function updateTotalTime() {
-            const firstTrack = tracks[trackIds[0]];
-            if (firstTrack.duration) {
-                totalTimeEl.textContent = formatTime(firstTrack.duration);
+        // 初始化时间标尺
+        function initRuler() {
+            rulerMarks.innerHTML = '';
+            // 生成时间刻度（每1秒一个刻度）
+            for (let i = 0; i <= duration; i++) {
+                const mark = document.createElement('div');
+                mark.className = 'ruler-mark';
+                mark.dataset.time = formatTime(i);
+                rulerMarks.appendChild(mark);
             }
         }
 
-        // 时间格式化（00:00）
+        // 格式化时间（00:00:00.00）
         function formatTime(seconds) {
-            if (isNaN(seconds)) return '00:00';
-            const min = Math.floor(seconds / 60);
-            const sec = Math.floor(seconds % 60);
-            return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+            const hours = Math.floor(seconds / 3600).toString().padStart(2, '0');
+            const mins = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+            const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
+            const frames = Math.floor((seconds % 1) * frameRate).toString().padStart(2, '0');
+            return `${hours}:${mins}:${secs}.${frames}`;
         }
+
+        // 更新播放头位置
+        function updatePlayhead() {
+            // 计算位置：50px是左侧偏移，每1秒对应50px宽度（可随缩放调整）
+            const position = 50 + (currentTime / duration) * (duration * 50 * (zoomLevel / 50));
+            playhead.style.left = `${position}px`;
+            timecodeEl.textContent = formatTime(currentTime);
+        }
+
+        // 播放/暂停动画
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            playPauseBtn.innerHTML = isPlaying ? '<span>⏸</span> 播放/暂停' : '<span>▶</span> 播放/暂停';
+            
+            if (isPlaying) {
+                animatePlayhead();
+            } else if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+        }
+
+        // 播放头动画
+        function animatePlayhead() {
+            if (!isPlaying) return;
+            
+            // 更新当前时间（每帧增加1/60秒，模拟60fps）
+            currentTime += 1/60;
+            if (currentTime >= duration) {
+                currentTime = 0; // 循环播放
+            }
+            
+            updatePlayhead();
+            animationFrameId = requestAnimationFrame(animatePlayhead);
+        }
+
+        // 缩放时间线
+        function updateZoom(level) {
+            zoomLevel = Math.max(10, Math.min(100, level)); // 限制缩放范围10-100%
+            zoomThumb.style.left = `${zoomLevel}%`;
+            
+            // 调整网格和轨道内容大小
+            const gridWidth = 50 * (zoomLevel / 50); // 缩放后每个刻度的宽度
+            tracksContent.style.backgroundSize = `${gridWidth}px 60px`;
+            
+            // 重新计算播放头位置
+            updatePlayhead();
+        }
+
+        // 点击时间线跳转
+        tracksContent.addEventListener('click', (e) => {
+            const rect = tracksContent.getBoundingClientRect();
+            const clickX = e.clientX - rect.left; // 相对于轨道内容的X坐标
+            const gridWidth = 50 * (zoomLevel / 50);
+            
+            // 计算点击位置对应的时间
+            const clickTime = (clickX - 50) / gridWidth; // 减去左侧50px偏移
+            currentTime = Math.max(0, Math.min(duration, clickTime));
+            updatePlayhead();
+        });
+
+        // 事件监听
+        playPauseBtn.addEventListener('click', togglePlay);
+        document.querySelector('.control-btn:nth-child(3)').addEventListener('click', () => {
+            // 重置时间
+            currentTime = 0;
+            updatePlayhead();
+        });
+        document.getElementById('zoomIn').addEventListener('click', () => {
+            updateZoom(zoomLevel + 10);
+        });
+        document.getElementById('zoomOut').addEventListener('click', () => {
+            updateZoom(zoomLevel - 10);
+        });
+
+        // 初始化
+        initRuler();
+        updatePlayhead();
     </script>
 </body>
 </html>
