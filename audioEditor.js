@@ -16,7 +16,12 @@ const progressTime = document.getElementById('progressTime');
 // 音频元素（关联MP3文件）
 const audio1 = document.getElementById('audio1');
 const audio2 = document.getElementById('audio2');
-const audios = [audio1, audio2];
+// 新增轨道3-6的音频元素引用
+const audio3 = document.getElementById('audio3');
+const audio4 = document.getElementById('audio4');
+const audio5 = document.getElementById('audio5');
+const audio6 = document.getElementById('audio6');
+const audios = [audio1, audio2, audio3, audio4, audio5, audio6];
 
 // 状态变量
 let isPlaying = false;
@@ -24,7 +29,7 @@ let currentTime = 0; // 当前时间（秒）
 let duration = 20; // 默认总时长（秒，会根据音频实际长度更新）
 let frameRate = 30; // 帧率（用于时间显示）
 let animationFrameId = null;
-let mutedTracks = {1: false, 2: false}; // 轨道静音状态
+let mutedTracks = {1: false, 2: false, 3: false, 4: false, 5: false, 6: false};
 let isDragging = false; // 进度条拖动状态
 
 // 初始化：获取音频实际时长并更新时间线
@@ -151,6 +156,10 @@ function stopPlay() {
 // 同步两轨进度（强制对齐）
 function syncTracks() {
     audio2.currentTime = audio1.currentTime; // 轨道2对齐轨道1
+    audio3.currentTime = audio1.currentTime; // 新增
+    audio4.currentTime = audio1.currentTime; // 新增
+    audio5.currentTime = audio1.currentTime; // 新增
+    audio6.currentTime = audio1.currentTime; // 新增
     currentTime = audio1.currentTime;
     updatePlayhead();
     updateProgressDisplay();
@@ -167,6 +176,10 @@ function toggleMute(trackId) {
     // 控制对应音频的静音
     if (trackId === 1) audio1.muted = mutedTracks[trackId];
     if (trackId === 2) audio2.muted = mutedTracks[trackId];
+    if (trackId === 3) audio3.muted = mutedTracks[trackId]; // 新增
+    if (trackId === 4) audio4.muted = mutedTracks[trackId]; // 新增
+    if (trackId === 5) audio5.muted = mutedTracks[trackId]; // 新增
+    if (trackId === 6) audio6.muted = mutedTracks[trackId]; // 新增
 }
 
 // 进度条点击跳转

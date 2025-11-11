@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>双轨音频编辑与播放</title>
+    <title>5轨音频编辑与播放</title>
     <style>
         * {
             margin: 0;
@@ -97,6 +97,8 @@
             color: #aaa;
             cursor: pointer;
             font-size: 14px;
+            background: transparent;
+            border: none;
         }
         .track-mute.muted {
             color: #ff4444;
@@ -241,10 +243,14 @@
                 );
             opacity: 0.7;
         }
-        .track-1 { top: 5px; }    /* 轨道1位置 */
-        .track-2 { top: 85px; }   /* 轨道2位置（轨道高度80px） */
+        /* 5轨音频块定位（每个轨道间隔80px） */
+        .track-1 { top: 5px; width: 300px; }    /* 轨道1：bass */
+        .track-2 { top: 85px; width: 400px; }   /* 轨道2：电钢 */
+        .track-3 { top: 165px; width: 350px; }  /* 轨道3：鼓 */
+        .track-4 { top: 245px; width: 450px; }  /* 轨道4：人声 */
+        .track-5 { top: 325px; width: 380px; }  /* 轨道5：吉他 */
 
-        /* 底部进度条控制（替换原缩放控制） */
+        /* 底部进度条控制 */
         .progress-controls {
             height: 40px;
             background-color: #252525;
@@ -295,7 +301,7 @@
 <body>
     <!-- 顶部控制栏 -->
     <div class="top-controls">
-        <div class="project-title">双轨音频编辑与播放</div>
+        <div class="project-title">5轨音频编辑与播放</div>
         <button class="control-btn play-btn" id="playPauseBtn">
             <span>▶</span> 播放/暂停
         </button>
@@ -310,17 +316,32 @@
 
     <!-- 时间线主体 -->
     <div class="timeline-container">
-        <!-- 轨道名称列 -->
+        <!-- 轨道名称列（5轨完整） -->
         <div class="track-names">
             <div class="track-name-item">
                 <div class="track-icon">A1</div>
-                <div>音频轨道 1</div>
-                <div class="track-mute" onclick="toggleMute(1)">🔇</div>
+                <div>音频轨道 1（bass）</div>
+                <button class="track-mute" onclick="toggleMute(1)">🔈</button>
             </div>
             <div class="track-name-item">
                 <div class="track-icon">A2</div>
-                <div>音频轨道 2</div>
-                <div class="track-mute" onclick="toggleMute(2)">🔇</div>
+                <div>音频轨道 2（电钢）</div>
+                <button class="track-mute" onclick="toggleMute(2)">🔈</button>
+            </div>
+            <div class="track-name-item">
+                <div class="track-icon">A3</div>
+                <div>音频轨道 3（鼓）</div>
+                <button class="track-mute" onclick="toggleMute(3)">🔈</button>
+            </div>
+            <div class="track-name-item">
+                <div class="track-icon">A4</div>
+                <div>音频轨道 4（人声）</div>
+                <button class="track-mute" onclick="toggleMute(4)">🔈</button>
+            </div>
+            <div class="track-name-item">
+                <div class="track-icon">A5</div>
+                <div>音频轨道 5（吉他）</div>
+                <button class="track-mute" onclick="toggleMute(5)">🔈</button>
             </div>
         </div>
 
@@ -333,25 +354,26 @@
                 </div>
             </div>
 
-            <!-- 轨道内容区域 -->
+            <!-- 轨道内容区域（5轨音频块） -->
             <div class="tracks-content" id="tracksContent">
+                <!-- 轨道1音频块 -->
+                <div class="audio-clip track-1" data-track="1">bass.mp3</div>
+                <!-- 轨道2音频块 -->
+                <div class="audio-clip track-2" data-track="2">keybord.mp3</div>
+                <!-- 轨道3音频块 -->
+                <div class="audio-clip track-3" data-track="3">drum.mp3</div>
+                <!-- 轨道4音频块 -->
+                <div class="audio-clip track-4" data-track="4">vocal.mp3</div>
+                <!-- 轨道5音频块 -->
+                <div class="audio-clip track-5" data-track="5">guitar.mp3</div>
+                
                 <!-- 播放头 -->
                 <div class="playhead" id="playhead"></div>
-
-                <!-- 轨道1音频片段 -->
-                <div class="audio-clip track-1" style="width: 250px; left: 50px;">
-                    主旋律.mp3
-                </div>
-
-                <!-- 轨道2音频片段 -->
-                <div class="audio-clip track-2" style="width: 200px; left: 150px;">
-                    伴奏.mp3
-                </div>
             </div>
         </div>
     </div>
 
-    <!-- 底部进度条控制（替换原缩放控制） -->
+    <!-- 底部进度条控制 -->
     <div class="progress-controls">
         <div class="progress-label">进度</div>
         <div class="progress-bar" id="progressBar">
@@ -361,11 +383,259 @@
         <div class="progress-label" id="progressTime">00:00 / 00:00</div>
     </div>
 
-    <!-- 隐藏的音频播放标签（实际读取MP3文件） -->
-    <audio id="audio1" src="music/track1.mp3" preload="auto"></audio>
-    <audio id="audio2" src="music/track2.mp3" preload="auto"></audio>
+    <!-- 5轨音频元素（关联MP3文件） -->
+    <audio id="audio1" src="music/bass.mp3"></audio>
+    <audio id="audio2" src="music/keyboard23.mp3"></audio>
+    <audio id="audio3" src="music/drums.mp3"></audio>
+    <audio id="audio4" src="music/vocal333.mp3"></audio>
+    <audio id="audio5" src="music/guitar444.mp3"> </audio>
 
-    <!-- 引入外部脚本（需将脚本文件与HTML同目录，命名为audioEditor.js） -->
-    <script src="audioEditor.js"></script>
+    <script>
+        // 核心变量
+        const playhead = document.getElementById('playhead');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const syncBtn = document.getElementById('syncBtn');
+        const timecodeEl = document.getElementById('timecode');
+        const rulerMarks = document.getElementById('rulerMarks');
+        const tracksContent = document.getElementById('tracksContent');
+
+        // 进度条相关元素
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const progressThumb = document.getElementById('progressThumb');
+        const progressTime = document.getElementById('progressTime');
+
+        // 音频元素（5轨）
+        const audio1 = document.getElementById('audio1');
+        const audio2 = document.getElementById('audio2');
+        const audio3 = document.getElementById('audio3');
+        const audio4 = document.getElementById('audio4');
+        const audio5 = document.getElementById('audio5');
+        const audios = [audio1, audio2, audio3, audio4, audio5];
+
+        // 状态变量
+        let isPlaying = false;
+        let currentTime = 0; // 当前时间（秒）
+        let duration = 20; // 默认总时长（秒，会根据音频实际长度更新）
+        let frameRate = 30; // 帧率（用于时间显示）
+        let animationFrameId = null;
+        let mutedTracks = {1: false, 2: false, 3: false, 4: false, 5: false}; // 5轨静音状态
+        let isDragging = false; // 进度条拖动状态
+
+        // 初始化：获取音频实际时长并更新时间线
+        function initAudio() {
+            // 监听所有5个轨道的加载事件，取最长时长作为总时长
+            audios.forEach(audio => {
+                audio.addEventListener('loadedmetadata', () => {
+                    duration = Math.max(duration, Math.ceil(audio.duration));
+                    initRuler(); // 重新生成时间标尺
+                    updateProgressDisplay(); // 更新进度显示
+                });
+            });
+
+            // 监听音频时间更新事件（用于播放时同步进度）
+            audio1.addEventListener('timeupdate', syncAudioProgress);
+        }
+
+        // 初始化时间标尺（每1秒1个刻度，每5秒1个主刻度）
+        function initRuler() {
+            rulerMarks.innerHTML = '';
+            for (let i = 0; i <= duration; i++) {
+                const mark = document.createElement('div');
+                mark.className = `ruler-mark ${i % 5 === 0 ? 'major' : ''}`;
+                mark.dataset.time = i < 10 ? `00:00:0${i}.00` : `00:00:${i}.00`;
+                rulerMarks.appendChild(mark);
+            }
+        }
+
+        // 格式化时间（00:00:00.00）
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
+            const frames = Math.floor((seconds % 1) * frameRate).toString().padStart(2, '0');
+            return `00:${mins}:${secs}.${frames}`;
+        }
+
+        // 格式化短时间（00:00）
+        function formatShortTime(seconds) {
+            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
+            return `${mins}:${secs}`;
+        }
+
+        // 更新播放头位置（与音频进度同步）
+        function updatePlayhead() {
+            if (duration <= 0) return;
+            const gridWidth = 50; // 每个刻度的宽度
+            const maxPosition = 50 + duration * gridWidth; // 最大位置（不超过时间线末端）
+            const position = Math.min(50 + currentTime * gridWidth, maxPosition);
+            playhead.style.left = `${position}px`;
+            timecodeEl.textContent = formatTime(currentTime);
+        }
+
+        // 更新进度条显示
+        function updateProgressDisplay() {
+            if (duration <= 0) return;
+            
+            const progress = (currentTime / duration) * 100;
+            progressFill.style.width = `${progress}%`;
+            progressThumb.style.left = `${progress}%`;
+            progressTime.textContent = `${formatShortTime(currentTime)} / ${formatShortTime(duration)}`;
+        }
+
+        // 同步音频进度（播放时自动更新）
+        function syncAudioProgress() {
+            if (!isDragging) {
+                currentTime = audio1.currentTime;
+                updatePlayhead();
+                updateProgressDisplay();
+                
+                // 播放结束时自动停止
+                if (currentTime >= duration) {
+                    stopPlay();
+                }
+            }
+        }
+
+        // 播放/暂停控制（同步5轨音频和播放头）
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            playPauseBtn.innerHTML = isPlaying ? '<span>⏸</span> 播放/暂停' : '<span>▶</span> 播放/暂停';
+            
+            if (isPlaying) {
+                // 开始播放所有5轨音频
+                audios.forEach(audio => {
+                    audio.play().catch(err => {
+                        alert('请先点击页面任意位置激活播放（浏览器限制）');
+                        isPlaying = false;
+                        playPauseBtn.innerHTML = '<span>▶</span> 播放/暂停';
+                    });
+                });
+                animatePlayhead(); // 启动播放头动画
+            } else {
+                // 暂停音频和播放头
+                if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                audios.forEach(audio => audio.pause());
+            }
+        }
+
+        // 播放头动画（与音频进度实时同步）
+        function animatePlayhead() {
+            if (!isPlaying) return;
+            
+            updatePlayhead();
+            animationFrameId = requestAnimationFrame(animatePlayhead);
+        }
+
+        // 停止播放并复位
+        function stopPlay() {
+            isPlaying = false;
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            currentTime = 0;
+            audios.forEach(audio => {
+                audio.pause();
+                audio.currentTime = 0; // 所有5轨音频进度复位
+            });
+            updatePlayhead();
+            updateProgressDisplay();
+            playPauseBtn.innerHTML = '<span>▶</span> 播放/暂停';
+        }
+
+        // 同步5轨进度（强制对齐到轨道1）
+        function syncTracks() {
+            audio2.currentTime = audio1.currentTime;
+            audio3.currentTime = audio1.currentTime;
+            audio4.currentTime = audio1.currentTime;
+            audio5.currentTime = audio1.currentTime;
+            
+            currentTime = audio1.currentTime;
+            updatePlayhead();
+            updateProgressDisplay();
+            alert('所有5轨已同步到当前位置');
+        }
+
+        // 轨道静音切换（支持5轨）
+        function toggleMute(trackId) {
+            mutedTracks[trackId] = !mutedTracks[trackId];
+            const muteBtn = document.querySelector(`.track-name-item:nth-child(${trackId}) .track-mute`);
+            muteBtn.classList.toggle('muted', mutedTracks[trackId]);
+            muteBtn.textContent = mutedTracks[trackId] ? '🔇' : '🔈';
+            
+            // 控制对应轨道音频静音
+            if (trackId === 1) audio1.muted = mutedTracks[trackId];
+            if (trackId === 2) audio2.muted = mutedTracks[trackId];
+            if (trackId === 3) audio3.muted = mutedTracks[trackId];
+            if (trackId === 4) audio4.muted = mutedTracks[trackId];
+            if (trackId === 5) audio5.muted = mutedTracks[trackId];
+        }
+
+        // 进度条点击跳转
+        function seekProgress(e) {
+            const rect = progressBar.getBoundingClientRect();
+            const clickPos = (e.clientX - rect.left) / rect.width;
+            const newTime = clickPos * duration;
+            
+            updateProgress(newTime);
+        }
+
+        // 进度条拖动开始
+        function startDrag() {
+            isDragging = true;
+            document.addEventListener('mousemove', dragProgress);
+            document.addEventListener('mouseup', endDrag);
+        }
+
+        // 进度条拖动中
+        function dragProgress(e) {
+            const rect = progressBar.getBoundingClientRect();
+            // 限制拖动范围在0-100%
+            let dragPos = (e.clientX - rect.left) / rect.width;
+            dragPos = Math.max(0, Math.min(1, dragPos));
+            
+            const newTime = dragPos * duration;
+            updateProgress(newTime);
+        }
+
+        // 进度条拖动结束
+        function endDrag() {
+            isDragging = false;
+            document.removeEventListener('mousemove', dragProgress);
+            document.removeEventListener('mouseup', endDrag);
+        }
+
+        // 更新进度（同步所有5轨音频、播放头、进度条）
+        function updateProgress(newTime) {
+            currentTime = newTime;
+            audios.forEach(audio => audio.currentTime = currentTime);
+            updatePlayhead();
+            updateProgressDisplay();
+        }
+
+        // 点击时间线跳转位置（同步5轨音频进度）
+        tracksContent.addEventListener('click', (e) => {
+            const rect = tracksContent.getBoundingClientRect();
+            const clickX = e.clientX - rect.left - 50; // 减去左侧偏移
+            const gridWidth = 50;
+            
+            if (clickX >= 0) {
+                // 计算点击位置对应的时间
+                const newTime = Math.min(duration, clickX / gridWidth);
+                updateProgress(newTime);
+            }
+        });
+
+        // 事件监听
+        playPauseBtn.addEventListener('click', togglePlay);
+        stopBtn.addEventListener('click', stopPlay);
+        syncBtn.addEventListener('click', syncTracks);
+        progressBar.addEventListener('click', seekProgress);
+        progressThumb.addEventListener('mousedown', startDrag);
+
+        // 初始化
+        initAudio();
+        updatePlayhead();
+        updateProgressDisplay();
+    </script>
 </body>
 </html>
