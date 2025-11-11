@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试网页 - GitHub Pages</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        body {
+            background-color: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .intro {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background: #2980b9;
+        }
+        .content {
+            margin-top: 30px;
+            padding: 20px;
+            border-top: 1px solid #eee;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 我的第一个 GitHub Pages 网页</h1>
+        <p class="intro">这是一个用于测试部署的静态网页示例</p>
+        
+        <div style="text-align: center;">
+            <button class="btn" onclick="toggleContent()">点击显示/隐藏内容</button>
+        </div>
+        
+        <div class="content hidden" id="extraContent">
+            <h3>部署成功！</h3>
+            <p>如果看到这段文字，说明你的网页已经成功部署到 GitHub Pages 了。</p>
+            <p>后续可以通过修改代码并推送到仓库，自动更新这个页面。</p>
+            <p style="margin-top: 15px; color: #7f8c8d;">当前时间: <span id="time"></span></p>
+        </div>
+    </div>
+
+    <script>
+        // 显示当前时间
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('time').textContent = now.toLocaleString();
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+
+        // 切换内容显示状态
+        function toggleContent() {
+            const content = document.getElementById('extraContent');
+            content.classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>
