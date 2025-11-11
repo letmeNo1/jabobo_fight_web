@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>测试网页 - GitHub Pages</title>
+    <title>音乐播放静态网页</title>
     <style>
         * {
             margin: 0;
@@ -12,82 +12,200 @@
             font-family: 'Arial', sans-serif;
         }
         body {
-            background-color: #f0f2f5;
+            background-color: #f5f7fa;
             color: #333;
-            line-height: 1.6;
-        }
-        .container {
-            max-width: 800px;
-            margin: 50px auto;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             padding: 20px;
+        }
+        .music-container {
             background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
         }
         h1 {
             color: #2c3e50;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .intro {
             margin-bottom: 30px;
-            text-align: center;
+            font-size: 24px;
+        }
+        .audio-info {
+            margin-bottom: 25px;
+        }
+        .song-title {
+            font-size: 18px;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+        .time-display {
+            font-size: 14px;
+            color: #7f8c8d;
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+        /* 进度条样式 */
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background-color: #eee;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 20px 0;
+            position: relative;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #3498db;
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+        /* 按钮样式 */
+        .control-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            align-items: center;
         }
         .btn {
-            display: inline-block;
-            padding: 10px 20px;
-            background: #3498db;
-            color: white;
+            background: none;
             border: none;
-            border-radius: 5px;
             cursor: pointer;
-            font-size: 16px;
-            transition: background 0.3s;
+            font-size: 24px;
+            color: #3498db;
+            transition: color 0.3s;
         }
         .btn:hover {
-            background: #2980b9;
+            color: #2980b9;
         }
-        .content {
-            margin-top: 30px;
-            padding: 20px;
-            border-top: 1px solid #eee;
+        .play-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #3498db;
+            color: white;
+            font-size: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-        .hidden {
+        .play-btn:hover {
+            background-color: #2980b9;
+            color: white;
+        }
+        /* 隐藏原生音频标签 */
+        #audioPlayer {
             display: none;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎉 我的第一个 GitHub Pages 网页</h1>
-        <p class="intro">这是一个用于测试部署的静态网页示例</p>
-        
-        <div style="text-align: center;">
-            <button class="btn" onclick="toggleContent()">点击显示/隐藏内容</button>
+    <div class="music-container">
+        <h1>🎵 音乐播放器</h1>
+        <div class="audio-info">
+            <div class="song-title">你的歌曲名称</div>
+            <div class="time-display">
+                <span id="currentTime">00:00</span>
+                <span id="totalTime">00:00</span>
+            </div>
+            <!-- 进度条 -->
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
         </div>
-        
-        <div class="content hidden" id="extraContent">
-            <h3>部署成功！</h3>
-            <p>如果看到这段文字，说明你的网页已经成功部署到 GitHub Pages 了。</p>
-            <p>后续可以通过修改代码并推送到仓库，自动更新这个页面。</p>
-            <p style="margin-top: 15px; color: #7f8c8d;">当前时间: <span id="time"></span></p>
+        <!-- 控制按钮 -->
+        <div class="control-buttons">
+            <button class="btn" onclick="restartMusic()">🔄 重置</button>
+            <button class="btn play-btn" onclick="togglePlay()">▶️ 播放</button>
+            <button class="btn" onclick="toggleMute()">🔇 静音</button>
         </div>
     </div>
 
-    <script>
-        // 显示当前时间
-        function updateTime() {
-            const now = new Date();
-            document.getElementById('time').textContent = now.toLocaleString();
-        }
-        updateTime();
-        setInterval(updateTime, 1000);
+    <!-- 音频核心标签 -->
+    <audio id="audioPlayer">
+        <!-- 替换为你的音频文件路径（GitHub仓库中的相对路径） -->
+        <source src="music/Jenny.mp3" type="audio/mpeg">
+        你的浏览器不支持音频播放
+    </audio>
 
-        // 切换内容显示状态
-        function toggleContent() {
-            const content = document.getElementById('extraContent');
-            content.classList.toggle('hidden');
+    <script>
+        // 获取元素
+        const audio = document.getElementById('audioPlayer');
+        const playBtn = document.querySelector('.play-btn');
+        const progressBar = document.getElementById('progressBar');
+        const progressContainer = document.getElementById('progressContainer');
+        const currentTimeEl = document.getElementById('currentTime');
+        const totalTimeEl = document.getElementById('totalTime');
+        let isPlaying = false;
+        let isMuted = false;
+
+        // 播放/暂停切换
+        function togglePlay() {
+            if (isPlaying) {
+                audio.pause();
+                playBtn.innerHTML = '▶️ 播放';
+            } else {
+                audio.play().catch(err => {
+                    alert('需先点击页面任意位置再播放（浏览器安全限制）');
+                });
+                playBtn.innerHTML = '⏸️ 暂停';
+            }
+            isPlaying = !isPlaying;
         }
+
+        // 静音切换
+        function toggleMute() {
+            audio.muted = !audio.muted;
+            isMuted = audio.muted;
+            playBtn.innerHTML = isMuted ? '🔈 取消静音' : '🔇 静音';
+        }
+
+        // 重置播放进度
+        function restartMusic() {
+            audio.currentTime = 0;
+            progressBar.style.width = '0%';
+            currentTimeEl.textContent = '00:00';
+        }
+
+        // 更新进度条和时间显示
+        audio.addEventListener('timeupdate', () => {
+            const progress = (audio.currentTime / audio.duration) * 100;
+            progressBar.style.width = `${progress}%`;
+            
+            // 格式化当前时间
+            currentTimeEl.textContent = formatTime(audio.currentTime);
+            // 初始化总时长（音频加载完成后）
+            if (audio.duration) {
+                totalTimeEl.textContent = formatTime(audio.duration);
+            }
+        });
+
+        // 点击进度条跳转播放位置
+        progressContainer.addEventListener('click', (e) => {
+            const clickPosition = (e.offsetX / progressContainer.offsetWidth) * audio.duration;
+            audio.currentTime = clickPosition;
+            progressBar.style.width = `${(clickPosition / audio.duration) * 100}%`;
+        });
+
+        // 时间格式化（转为 00:00 格式）
+        function formatTime(seconds) {
+            const min = Math.floor(seconds / 60);
+            const sec = Math.floor(seconds % 60);
+            return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+        }
+
+        // 音频播放结束后重置
+        audio.addEventListener('ended', () => {
+            isPlaying = false;
+            playBtn.innerHTML = '▶️ 播放';
+            restartMusic();
+        });
     </script>
 </body>
 </html>
