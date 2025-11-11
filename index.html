@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>简易多轨道时间线编辑器（类似AE）</title>
+    <title>双轨音频编辑与播放</title>
     <style>
         * {
             margin: 0;
@@ -90,12 +90,16 @@
             align-items: center;
             justify-content: center;
             font-size: 12px;
+            background-color: #008000; /* 音频轨道绿色 */
         }
-        .audio-icon {
-            background-color: #008000;
+        .track-mute {
+            margin-left: auto;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 14px;
         }
-        .video-icon {
-            background-color: #ff0000;
+        .track-mute.muted {
+            color: #ff4444;
         }
 
         /* 时间线轨道列 */
@@ -135,6 +139,10 @@
             color: #aaa;
             font-family: monospace;
         }
+        .ruler-mark.major {
+            height: 20px;
+            border-left-color: #777;
+        }
 
         /* 轨道内容区域 */
         .tracks-content {
@@ -145,7 +153,7 @@
             background-image: 
                 linear-gradient(to right, #2d2d2d 1px, transparent 1px),
                 linear-gradient(to bottom, #2d2d2d 1px, transparent 1px);
-            background-size: 50px 60px; /* 网格大小：时间刻度×轨道高度 */
+            background-size: 50px 80px; /* 网格大小：时间刻度×轨道高度 */
             padding-left: 50px;
         }
 
@@ -172,13 +180,12 @@
             border-top: 5px solid #ff0000;
         }
 
-        /* 轨道内容块（类似AE的素材片段） */
-        .track-item {
+        /* 音频波形可视化块 */
+        .audio-clip {
             position: absolute;
-            height: 50px;
-            background-color: rgba(0, 120, 215, 0.7);
+            height: 70px;
+            background-color: rgba(0, 150, 0, 0.6); /* 音频块绿色 */
             border-radius: 3px;
-            top: 5px; /* 轨道内边距 */
             display: flex;
             align-items: center;
             padding: 0 10px;
@@ -189,9 +196,53 @@
             text-overflow: ellipsis;
             font-size: 14px;
         }
+        .audio-clip::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(to right, 
+                    transparent 0%, transparent 4%,
+                    rgba(255,255,255,0.2) 4%, rgba(255,255,255,0.2) 6%,
+                    transparent 6%, transparent 10%,
+                    rgba(255,255,255,0.3) 10%, rgba(255,255,255,0.3) 12%,
+                    transparent 12%, transparent 16%,
+                    rgba(255,255,255,0.1) 16%, rgba(255,255,255,0.1) 18%,
+                    transparent 18%, transparent 22%,
+                    rgba(255,255,255,0.4) 22%, rgba(255,255,255,0.4) 24%,
+                    transparent 24%, transparent 28%,
+                    rgba(255,255,255,0.2) 28%, rgba(255,255,255,0.2) 30%,
+                    transparent 30%, transparent 34%,
+                    rgba(255,255,255,0.3) 34%, rgba(255,255,255,0.3) 36%,
+                    transparent 36%, transparent 40%,
+                    rgba(255,255,255,0.1) 40%, rgba(255,255,255,0.1) 42%,
+                    transparent 42%, transparent 46%,
+                    rgba(255,255,255,0.2) 46%, rgba(255,255,255,0.2) 48%,
+                    transparent 48%, transparent 52%,
+                    rgba(255,255,255,0.5) 52%, rgba(255,255,255,0.5) 54%,
+                    transparent 54%, transparent 58%,
+                    rgba(255,255,255,0.3) 58%, rgba(255,255,255,0.3) 60%,
+                    transparent 60%, transparent 64%,
+                    rgba(255,255,255,0.2) 64%, rgba(255,255,255,0.2) 66%,
+                    transparent 66%, transparent 70%,
+                    rgba(255,255,255,0.4) 70%, rgba(255,255,255,0.4) 72%,
+                    transparent 72%, transparent 76%,
+                    rgba(255,255,255,0.1) 76%, rgba(255,255,255,0.1) 78%,
+                    transparent 78%, transparent 82%,
+                    rgba(255,255,255,0.3) 82%, rgba(255,255,255,0.3) 84%,
+                    transparent 84%, transparent 88%,
+                    rgba(255,255,255,0.2) 88%, rgba(255,255,255,0.2) 90%,
+                    transparent 90%, transparent 94%,
+                    rgba(255,255,255,0.4) 94%, rgba(255,255,255,0.4) 96%,
+                    transparent 96%, transparent 100%
+                );
+            opacity: 0.7;
+        }
         .track-1 { top: 5px; }    /* 轨道1位置 */
-        .track-2 { top: 65px; }   /* 轨道2位置（轨道高度60px） */
-        .track-3 { top: 125px; }  /* 轨道3位置 */
+        .track-2 { top: 85px; }   /* 轨道2位置（轨道高度80px） */
 
         /* 底部缩放控制 */
         .zoom-controls {
@@ -235,12 +286,15 @@
 <body>
     <!-- 顶部控制栏 -->
     <div class="top-controls">
-        <div class="project-title">我的项目 - 多轨道编辑</div>
+        <div class="project-title">双轨音频编辑与播放</div>
         <button class="control-btn play-btn" id="playPauseBtn">
             <span>▶</span> 播放/暂停
         </button>
-        <button class="control-btn">
-            <span>↺</span> 重置
+        <button class="control-btn" id="stopBtn">
+            <span>■</span> 停止
+        </button>
+        <button class="control-btn" id="syncBtn">
+            <span>⟲</span> 同步轨道
         </button>
         <div class="timecode" id="timecode">00:00:00.00</div>
     </div>
@@ -250,16 +304,14 @@
         <!-- 轨道名称列 -->
         <div class="track-names">
             <div class="track-name-item">
-                <div class="track-icon audio-icon">A</div>
+                <div class="track-icon">A1</div>
                 <div>音频轨道 1</div>
+                <div class="track-mute" onclick="toggleMute(1)">🔇</div>
             </div>
             <div class="track-name-item">
-                <div class="track-icon audio-icon">A</div>
+                <div class="track-icon">A2</div>
                 <div>音频轨道 2</div>
-            </div>
-            <div class="track-name-item">
-                <div class="track-icon video-icon">V</div>
-                <div>视频轨道 1</div>
+                <div class="track-mute" onclick="toggleMute(2)">🔇</div>
             </div>
         </div>
 
@@ -277,19 +329,14 @@
                 <!-- 播放头 -->
                 <div class="playhead" id="playhead"></div>
 
-                <!-- 轨道1内容 -->
-                <div class="track-item track-1" style="width: 200px; left: 50px;">
-                    背景音乐.mp3
+                <!-- 轨道1音频片段 -->
+                <div class="audio-clip track-1" style="width: 250px; left: 50px;">
+                    主旋律.mp3
                 </div>
 
-                <!-- 轨道2内容 -->
-                <div class="track-item track-2" style="width: 150px; left: 150px;">
-                    人声.wav
-                </div>
-
-                <!-- 轨道3内容 -->
-                <div class="track-item track-3" style="width: 300px; left: 50px;">
-                    主画面.mp4
+                <!-- 轨道2音频片段 -->
+                <div class="audio-clip track-2" style="width: 200px; left: 150px;">
+                    伴奏.mp3
                 </div>
             </div>
         </div>
@@ -304,75 +351,145 @@
         <button class="zoom-btn" id="zoomIn">+</button>
     </div>
 
+    <!-- 隐藏的音频播放标签（实际读取MP3文件） -->
+    <audio id="audio1" src="music/track1.mp3" preload="auto"></audio>
+    <audio id="audio2" src="music/track2.mp3" preload="auto"></audio>
+
     <script>
         // 核心变量
         const playhead = document.getElementById('playhead');
         const playPauseBtn = document.getElementById('playPauseBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const syncBtn = document.getElementById('syncBtn');
         const timecodeEl = document.getElementById('timecode');
         const rulerMarks = document.getElementById('rulerMarks');
         const tracksContent = document.getElementById('tracksContent');
         const zoomThumb = document.getElementById('zoomThumb');
         
+        // 音频元素（关联MP3文件）
+        const audio1 = document.getElementById('audio1');
+        const audio2 = document.getElementById('audio2');
+        const audios = [audio1, audio2]; // 音频数组，方便批量操作
+        
         let isPlaying = false;
         let currentTime = 0; // 当前时间（秒）
-        let duration = 30; // 总时长（秒）
+        let duration = 20; // 默认总时长（秒，会根据音频实际长度更新）
         let frameRate = 30; // 帧率（用于时间显示）
         let zoomLevel = 30; // 缩放比例（百分比）
         let animationFrameId = null;
+        let mutedTracks = {1: false, 2: false}; // 轨道静音状态
 
-        // 初始化时间标尺
+        // 初始化：获取音频实际时长并更新时间线
+        function initAudio() {
+            // 监听音频加载完成事件，获取实际时长
+            audio1.addEventListener('loadedmetadata', () => {
+                duration = Math.ceil(audio1.duration); // 取轨道1时长为基准
+                initRuler(); // 重新生成时间标尺
+            });
+            audio2.addEventListener('loadedmetadata', () => {
+                // 确保时间线时长不短于任一轨道
+                duration = Math.max(duration, Math.ceil(audio2.duration));
+                initRuler();
+            });
+        }
+
+        // 初始化时间标尺（每1秒1个刻度，每5秒1个主刻度）
         function initRuler() {
             rulerMarks.innerHTML = '';
-            // 生成时间刻度（每1秒一个刻度）
             for (let i = 0; i <= duration; i++) {
                 const mark = document.createElement('div');
-                mark.className = 'ruler-mark';
-                mark.dataset.time = formatTime(i);
+                mark.className = `ruler-mark ${i % 5 === 0 ? 'major' : ''}`;
+                mark.dataset.time = i < 10 ? `00:00:0${i}.00` : `00:00:${i}.00`;
                 rulerMarks.appendChild(mark);
             }
         }
 
         // 格式化时间（00:00:00.00）
         function formatTime(seconds) {
-            const hours = Math.floor(seconds / 3600).toString().padStart(2, '0');
-            const mins = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
             const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
             const frames = Math.floor((seconds % 1) * frameRate).toString().padStart(2, '0');
-            return `${hours}:${mins}:${secs}.${frames}`;
+            return `00:${mins}:${secs}.${frames}`;
         }
 
-        // 更新播放头位置
+        // 更新播放头位置（与音频进度同步）
         function updatePlayhead() {
-            // 计算位置：50px是左侧偏移，每1秒对应50px宽度（可随缩放调整）
-            const position = 50 + (currentTime / duration) * (duration * 50 * (zoomLevel / 50));
+            const gridWidth = 50 * (zoomLevel / 50); // 缩放后每个刻度的宽度
+            const position = 50 + (currentTime / duration) * (duration * gridWidth);
             playhead.style.left = `${position}px`;
             timecodeEl.textContent = formatTime(currentTime);
         }
 
-        // 播放/暂停动画
+        // 播放/暂停控制（同步音频和播放头）
         function togglePlay() {
             isPlaying = !isPlaying;
             playPauseBtn.innerHTML = isPlaying ? '<span>⏸</span> 播放/暂停' : '<span>▶</span> 播放/暂停';
             
             if (isPlaying) {
-                animatePlayhead();
-            } else if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
+                // 开始播放音频
+                audios.forEach(audio => {
+                    audio.play().catch(err => {
+                        alert('请先点击页面任意位置激活播放（浏览器限制）');
+                        isPlaying = false;
+                        playPauseBtn.innerHTML = '<span>▶</span> 播放/暂停';
+                    });
+                });
+                animatePlayhead(); // 启动播放头动画
+            } else {
+                // 暂停音频和播放头
+                if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                audios.forEach(audio => audio.pause());
             }
         }
 
-        // 播放头动画
+        // 播放头动画（与音频进度实时同步）
         function animatePlayhead() {
             if (!isPlaying) return;
             
-            // 更新当前时间（每帧增加1/60秒，模拟60fps）
-            currentTime += 1/60;
+            // 从音频获取当前时间（确保播放头与实际播放进度一致）
+            currentTime = audio1.currentTime;
+            
+            // 音频播放结束时停止
             if (currentTime >= duration) {
-                currentTime = 0; // 循环播放
+                stopPlay();
+                return;
             }
             
             updatePlayhead();
             animationFrameId = requestAnimationFrame(animatePlayhead);
+        }
+
+        // 停止播放并复位
+        function stopPlay() {
+            isPlaying = false;
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            currentTime = 0;
+            audios.forEach(audio => {
+                audio.pause();
+                audio.currentTime = 0; // 音频进度复位
+            });
+            updatePlayhead();
+            playPauseBtn.innerHTML = '<span>▶</span> 播放/暂停';
+        }
+
+        // 同步两轨进度（强制对齐）
+        function syncTracks() {
+            audio2.currentTime = audio1.currentTime; // 轨道2对齐轨道1
+            currentTime = audio1.currentTime;
+            updatePlayhead();
+            alert('两轨已同步到当前位置');
+        }
+
+        // 轨道静音切换（关联音频静音状态）
+        function toggleMute(trackId) {
+            mutedTracks[trackId] = !mutedTracks[trackId];
+            const muteBtn = document.querySelector(`.track-name-item:nth-child(${trackId}) .track-mute`);
+            muteBtn.classList.toggle('muted', mutedTracks[trackId]);
+            muteBtn.textContent = mutedTracks[trackId] ? '🔈' : '🔇';
+            
+            // 控制对应音频的静音
+            if (trackId === 1) audio1.muted = mutedTracks[trackId];
+            if (trackId === 2) audio2.muted = mutedTracks[trackId];
         }
 
         // 缩放时间线
@@ -380,42 +497,38 @@
             zoomLevel = Math.max(10, Math.min(100, level)); // 限制缩放范围10-100%
             zoomThumb.style.left = `${zoomLevel}%`;
             
-            // 调整网格和轨道内容大小
-            const gridWidth = 50 * (zoomLevel / 50); // 缩放后每个刻度的宽度
-            tracksContent.style.backgroundSize = `${gridWidth}px 60px`;
+            // 调整网格大小
+            const gridWidth = 50 * (zoomLevel / 50);
+            tracksContent.style.backgroundSize = `${gridWidth}px 80px`;
             
-            // 重新计算播放头位置
+            // 更新播放头位置
             updatePlayhead();
         }
 
-        // 点击时间线跳转
+        // 点击时间线跳转位置（同步音频进度）
         tracksContent.addEventListener('click', (e) => {
             const rect = tracksContent.getBoundingClientRect();
-            const clickX = e.clientX - rect.left; // 相对于轨道内容的X坐标
+            const clickX = e.clientX - rect.left - 50; // 减去左侧偏移
             const gridWidth = 50 * (zoomLevel / 50);
             
-            // 计算点击位置对应的时间
-            const clickTime = (clickX - 50) / gridWidth; // 减去左侧50px偏移
-            currentTime = Math.max(0, Math.min(duration, clickTime));
-            updatePlayhead();
+            if (clickX >= 0) {
+                // 计算点击位置对应的时间
+                currentTime = Math.min(duration, clickX / gridWidth);
+                // 同步音频进度
+                audios.forEach(audio => audio.currentTime = currentTime);
+                updatePlayhead();
+            }
         });
 
         // 事件监听
         playPauseBtn.addEventListener('click', togglePlay);
-        document.querySelector('.control-btn:nth-child(3)').addEventListener('click', () => {
-            // 重置时间
-            currentTime = 0;
-            updatePlayhead();
-        });
-        document.getElementById('zoomIn').addEventListener('click', () => {
-            updateZoom(zoomLevel + 10);
-        });
-        document.getElementById('zoomOut').addEventListener('click', () => {
-            updateZoom(zoomLevel - 10);
-        });
+        stopBtn.addEventListener('click', stopPlay);
+        syncBtn.addEventListener('click', syncTracks);
+        document.getElementById('zoomIn').addEventListener('click', () => updateZoom(zoomLevel + 10));
+        document.getElementById('zoomOut').addEventListener('click', () => updateZoom(zoomLevel - 10));
 
         // 初始化
-        initRuler();
+        initAudio();
         updatePlayhead();
     </script>
 </body>
