@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>音乐播放静态网页</title>
+    <title>多轨音频播放器（共享进度条）</title>
     <style>
         * {
             margin: 0;
@@ -12,51 +12,40 @@
             font-family: 'Arial', sans-serif;
         }
         body {
-            background-color: #f5f7fa;
+            background-color: #f0f2f5;
             color: #333;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .music-container {
-            background: white;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            max-width: 500px;
-            width: 100%;
-            text-align: center;
+            padding: 30px;
+            max-width: 800px;
+            margin: 0 auto;
         }
         h1 {
             color: #2c3e50;
+            text-align: center;
             margin-bottom: 30px;
-            font-size: 24px;
         }
-        .audio-info {
-            margin-bottom: 25px;
+        .master-controls {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        .song-title {
-            font-size: 18px;
-            margin-bottom: 5px;
-            color: #2c3e50;
+        .progress-section {
+            margin-bottom: 15px;
         }
         .time-display {
             font-size: 14px;
             color: #7f8c8d;
             display: flex;
             justify-content: space-between;
-            margin: 10px 0;
+            margin-bottom: 8px;
         }
-        /* 进度条样式 */
         .progress-container {
             width: 100%;
             height: 8px;
             background-color: #eee;
             border-radius: 4px;
             cursor: pointer;
-            margin: 20px 0;
             position: relative;
         }
         .progress-bar {
@@ -66,146 +55,188 @@
             width: 0%;
             transition: width 0.1s linear;
         }
-        /* 按钮样式 */
-        .control-buttons {
+        .tracks-container {
             display: flex;
-            justify-content: center;
-            gap: 20px;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .track {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
             align-items: center;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.05);
+        }
+        .track-name {
+            font-size: 16px;
+            color: #2c3e50;
+        }
+        .track-buttons {
+            display: flex;
+            gap: 10px;
         }
         .btn {
-            background: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
             border: none;
             cursor: pointer;
-            font-size: 24px;
-            color: #3498db;
-            transition: color 0.3s;
+            font-weight: bold;
+            transition: all 0.2s;
         }
-        .btn:hover {
-            color: #2980b9;
-        }
-        .play-btn {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
+        .btn-s {
             background-color: #3498db;
             color: white;
-            font-size: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
         }
-        .play-btn:hover {
+        .btn-s:hover {
             background-color: #2980b9;
+        }
+        .btn-m {
+            background-color: #ecf0f1;
+            color: #7f8c8d;
+        }
+        .btn-m:hover, .btn-m.muted {
+            background-color: #e74c3c;
             color: white;
         }
-        /* 隐藏原生音频标签 */
-        #audioPlayer {
+        audio {
             display: none;
         }
     </style>
 </head>
 <body>
-    <div class="music-container">
-        <h1>🎵 音乐播放器</h1>
-        <div class="audio-info">
-            <div class="song-title">你的歌曲名称</div>
+    <h1>🎵 多轨音频播放器</h1>
+
+    <!-- 总控制区（共享进度条） -->
+    <div class="master-controls">
+        <div class="progress-section">
             <div class="time-display">
                 <span id="currentTime">00:00</span>
                 <span id="totalTime">00:00</span>
             </div>
-            <!-- 进度条 -->
             <div class="progress-container" id="progressContainer">
                 <div class="progress-bar" id="progressBar"></div>
             </div>
         </div>
-        <!-- 控制按钮 -->
-        <div class="control-buttons">
-            <button class="btn" onclick="restartMusic()">🔄 重置</button>
-            <button class="btn play-btn" onclick="togglePlay()">▶️ 播放</button>
-            <button class="btn" onclick="toggleMute()">🔇 静音</button>
+    </div>
+
+    <!-- 轨道列表 -->
+    <div class="tracks-container">
+        <!-- 轨道1 -->
+        <div class="track">
+            <div class="track-name">轨道 1 - 主旋律</div>
+            <div class="track-buttons">
+                <button class="btn btn-s" onclick="playOnly('track1')">S</button>
+                <button class="btn btn-m" onclick="toggleMute('track1')">M</button>
+            </div>
+            <audio id="track1" src="music/track1.mp3" type="audio/mpeg"></audio>
+        </div>
+
+        <!-- 轨道2 -->
+        <div class="track">
+            <div class="track-name">轨道 2 - 鼓点</div>
+            <div class="track-buttons">
+                <button class="btn btn-s" onclick="playOnly('track2')">S</button>
+                <button class="btn btn-m" onclick="toggleMute('track2')">M</button>
+            </div>
+            <audio id="track2" src="music/track2.mp3" type="audio/mpeg"></audio>
+        </div>
+
+        <!-- 轨道3 -->
+        <div class="track">
+            <div class="track-name">轨道 3 - 贝斯</div>
+            <div class="track-buttons">
+                <button class="btn btn-s" onclick="playOnly('track3')">S</button>
+                <button class="btn btn-m" onclick="toggleMute('track3')">M</button>
+            </div>
+            <audio id="track3" src="music/track3.mp3" type="audio/mpeg"></audio>
         </div>
     </div>
 
-    <!-- 音频核心标签 -->
-    <audio id="audioPlayer">
-        <!-- 替换为你的音频文件路径（GitHub仓库中的相对路径） -->
-        <source src="music/Jenny.mp3" type="audio/mpeg">
-        你的浏览器不支持音频播放
-    </audio>
-
     <script>
-        // 获取元素
-        const audio = document.getElementById('audioPlayer');
-        const playBtn = document.querySelector('.play-btn');
+        // 获取所有轨道元素和进度条
+        const tracks = {
+            track1: document.getElementById('track1'),
+            track2: document.getElementById('track2'),
+            track3: document.getElementById('track3')
+        };
         const progressBar = document.getElementById('progressBar');
         const progressContainer = document.getElementById('progressContainer');
         const currentTimeEl = document.getElementById('currentTime');
         const totalTimeEl = document.getElementById('totalTime');
-        let isPlaying = false;
-        let isMuted = false;
+        let activeTracks = []; // 记录当前播放的轨道
 
-        // 播放/暂停切换
-        function togglePlay() {
-            if (isPlaying) {
-                audio.pause();
-                playBtn.innerHTML = '▶️ 播放';
-            } else {
-                audio.play().catch(err => {
-                    alert('需先点击页面任意位置再播放（浏览器安全限制）');
-                });
-                playBtn.innerHTML = '⏸️ 暂停';
-            }
-            isPlaying = !isPlaying;
+        // 初始化：所有轨道同步进度
+        Object.values(tracks).forEach(track => {
+            track.addEventListener('timeupdate', syncProgress);
+            track.addEventListener('loadedmetadata', updateTotalTime);
+        });
+
+        // 单独播放指定轨道（暂停其他所有轨道）
+        function playOnly(trackId) {
+            const targetTrack = tracks[trackId];
+            // 暂停所有轨道
+            Object.values(tracks).forEach(track => track.pause());
+            // 播放目标轨道
+            targetTrack.play().catch(err => {
+                alert('请先点击页面任意位置再播放（浏览器限制）');
+            });
+            activeTracks = [trackId];
         }
 
-        // 静音切换
-        function toggleMute() {
-            audio.muted = !audio.muted;
-            isMuted = audio.muted;
-            playBtn.innerHTML = isMuted ? '🔈 取消静音' : '🔇 静音';
+        // 切换轨道静音状态
+        function toggleMute(trackId) {
+            const targetTrack = tracks[trackId];
+            const muteBtn = document.querySelector(`[onclick="toggleMute('${trackId}')"]`);
+            targetTrack.muted = !targetTrack.muted;
+            muteBtn.classList.toggle('muted', targetTrack.muted);
         }
 
-        // 重置播放进度
-        function restartMusic() {
-            audio.currentTime = 0;
-            progressBar.style.width = '0%';
-            currentTimeEl.textContent = '00:00';
-        }
+        // 同步所有轨道进度条
+        function syncProgress() {
+            // 以第一个播放中的轨道为基准同步进度
+            const playingTrack = Object.values(tracks).find(track => !track.paused);
+            if (!playingTrack) return;
 
-        // 更新进度条和时间显示
-        audio.addEventListener('timeupdate', () => {
-            const progress = (audio.currentTime / audio.duration) * 100;
+            const progress = (playingTrack.currentTime / playingTrack.duration) * 100;
             progressBar.style.width = `${progress}%`;
+            currentTimeEl.textContent = formatTime(playingTrack.currentTime);
             
-            // 格式化当前时间
-            currentTimeEl.textContent = formatTime(audio.currentTime);
-            // 初始化总时长（音频加载完成后）
-            if (audio.duration) {
-                totalTimeEl.textContent = formatTime(audio.duration);
-            }
-        });
+            // 同步所有轨道的当前时间（确保进度一致）
+            Object.values(tracks).forEach(track => {
+                if (track !== playingTrack && !track.paused) {
+                    track.currentTime = playingTrack.currentTime;
+                }
+            });
+        }
 
-        // 点击进度条跳转播放位置
+        // 点击进度条跳转位置（所有轨道同步）
         progressContainer.addEventListener('click', (e) => {
-            const clickPosition = (e.offsetX / progressContainer.offsetWidth) * audio.duration;
-            audio.currentTime = clickPosition;
-            progressBar.style.width = `${(clickPosition / audio.duration) * 100}%`;
+            const clickRatio = e.offsetX / progressContainer.offsetWidth;
+            Object.values(tracks).forEach(track => {
+                if (track.duration) {
+                    track.currentTime = track.duration * clickRatio;
+                }
+            });
         });
 
-        // 时间格式化（转为 00:00 格式）
+        // 更新总时长（取第一个加载完成的轨道时长）
+        function updateTotalTime() {
+            const firstTrack = Object.values(tracks)[0];
+            if (firstTrack.duration) {
+                totalTimeEl.textContent = formatTime(firstTrack.duration);
+            }
+        }
+
+        // 时间格式化（00:00）
         function formatTime(seconds) {
+            if (isNaN(seconds)) return '00:00';
             const min = Math.floor(seconds / 60);
             const sec = Math.floor(seconds % 60);
             return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
         }
-
-        // 音频播放结束后重置
-        audio.addEventListener('ended', () => {
-            isPlaying = false;
-            playBtn.innerHTML = '▶️ 播放';
-            restartMusic();
-        });
     </script>
 </body>
 </html>
